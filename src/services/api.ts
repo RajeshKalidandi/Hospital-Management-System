@@ -7,11 +7,10 @@ const API_URL = import.meta.env.PROD
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  },
-  withCredentials: true,
-  timeout: 10000 // 10 seconds timeout
+  }
 });
 
 // Add auth token to requests if available
