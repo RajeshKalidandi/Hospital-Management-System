@@ -10,17 +10,45 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true
+  withCredentials: true,
+  timeout: 10000 // 10 seconds timeout
 });
 
 // Add auth token to requests if available
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
   }
-  return config;
-});
+);
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    if (error.response?.status === 401) {
+      // Clear token and redirect to login
+      localStorage.removeItem('token');
+      window.location.href = '/admin/login';
+      return Promise.reject(error);
+    }
+    
+    // Network error or server not responding
+    if (!error.response) {
+      console.error('Network error or server not responding');
+      return Promise.reject(new Error('Unable to connect to the server. Please try again later.'));
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 // API Services
 export const authService = {
