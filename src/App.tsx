@@ -16,16 +16,19 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* Public Route - Landing Page */}
+        {/* Public Routes */}
         <Route path="/" element={<Home />} />
-
-        {/* Admin Routes */}
         <Route path="/admin/login" element={<Login />} />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AdminLayout />
-          </ProtectedRoute>
-        }>
+
+        {/* Protected Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="patients" element={<Patients />} />
           <Route path="appointments" element={<Appointments />} />
@@ -35,7 +38,7 @@ function App() {
           <Route path="settings" element={<Settings />} />
         </Route>
 
-        {/* Catch all route */}
+        {/* Fallback route */}
         <Route path="*" element={<Navigate to="/admin/login" replace />} />
       </Routes>
     </Router>
