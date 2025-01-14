@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Video, CreditCard, MessageSquare, Stethoscope, HeartPulse, MapPin, Phone, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { authService } from '../services/api';
 
 export function Home() {
   const navigate = useNavigate();
@@ -27,24 +28,12 @@ export function Home() {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(adminCredentials),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('token', data.token);
-        navigate('/admin');
-      } else {
-        alert('Invalid credentials');
-      }
-    } catch (error) {
+      const data = await authService.login(adminCredentials.email, adminCredentials.password);
+      localStorage.setItem('token', data.token);
+      navigate('/admin');
+    } catch (error: any) {
       console.error('Login error:', error);
-      alert('Login failed');
+      alert(error.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 

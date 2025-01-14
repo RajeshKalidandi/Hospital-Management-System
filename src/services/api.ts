@@ -7,7 +7,7 @@ const API_URL = import.meta.env.PROD
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: true,
+  withCredentials: false,
   headers: {
     'Content-Type': 'application/json',
   }
