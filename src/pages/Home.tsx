@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Video, CreditCard, MessageSquare, Stethoscope, HeartPulse, MapPin, Phone, Mail } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export function Home() {
+  const navigate = useNavigate();
+  const [showAdminModal, setShowAdminModal] = useState(false);
+  const [adminCredentials, setAdminCredentials] = useState({ email: '', password: '' });
   const [bookingStep, setBookingStep] = useState(1);
   const [bookingData, setBookingData] = useState({
     name: '',
@@ -19,6 +23,47 @@ export function Home() {
     phone: '',
     message: '',
   });
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Show admin modal when Ctrl + Alt + A is pressed
+      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        setShowAdminModal(true);
+      }
+      // Close modal when Escape is pressed
+      if (e.key === 'Escape') {
+        setShowAdminModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  const handleAdminLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(adminCredentials),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem('token', data.token);
+        navigate('/admin');
+      } else {
+        alert('Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Login failed');
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -511,6 +556,51 @@ export function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Hidden Admin Login Modal */}
+      {showAdminModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold">Admin Login</h2>
+              <button
+                onClick={() => setShowAdminModal(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleAdminLogin} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  value={adminCredentials.email}
+                  onChange={(e) => setAdminCredentials(prev => ({ ...prev, email: e.target.value }))}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <input
+                  type="password"
+                  value={adminCredentials.password}
+                  onChange={(e) => setAdminCredentials(prev => ({ ...prev, password: e.target.value }))}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors"
+              >
+                Login
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
