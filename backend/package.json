@@ -2,27 +2,28 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Hospital Management System Backend",
-  "main": "src/index.js",
+  "main": "functions/api.ts",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "netlify dev",
+    "build": "netlify build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@netlify/functions": "^2.0.0",
     "@supabase/supabase-js": "^2.x.x",
-    "bcrypt": "^5.x.x",
+    "bcryptjs": "^2.x.x",
     "cors": "^2.x.x",
     "dotenv": "^16.x.x",
     "express": "^4.x.x",
     "jsonwebtoken": "^9.x.x",
-    "nodemailer": "^6.x.x",
-    "razorpay": "^2.9.5",
-    "stripe": "^17.5.0"
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.5",
+    "netlify-cli": "^17.0.0",
+    "typescript": "^5.3.3"
   }
 }
