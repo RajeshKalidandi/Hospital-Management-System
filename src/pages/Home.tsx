@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Calendar, Video, CreditCard, MessageSquare, Stethoscope, HeartPulse, MapPin, Phone, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,23 +23,6 @@ export function Home() {
     phone: '',
     message: '',
   });
-
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      // Show admin modal when Ctrl + Alt + A is pressed
-      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
-        e.preventDefault();
-        setShowAdminModal(true);
-      }
-      // Close modal when Escape is pressed
-      if (e.key === 'Escape') {
-        setShowAdminModal(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -518,9 +501,9 @@ export function Home() {
                 <li>
                   <button 
                     onClick={() => setShowAdminModal(true)} 
-                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                    className="text-blue-400 hover:text-blue-300 transition-colors cursor-pointer font-medium"
                   >
-                    Admin Portal
+                    Admin Portal →
                   </button>
                 </li>
               </ul>
