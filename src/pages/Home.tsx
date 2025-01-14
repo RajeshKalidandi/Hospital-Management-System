@@ -515,6 +515,14 @@ export function Home() {
                 <li><a href="#about" className="text-gray-400 hover:text-white transition-colors">About Us</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-white transition-colors">Contact</a></li>
                 <li><a href="#booking" className="text-gray-400 hover:text-white transition-colors">Book Appointment</a></li>
+                <li>
+                  <button 
+                    onClick={() => setShowAdminModal(true)} 
+                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
+                  >
+                    Admin Portal
+                  </button>
+                </li>
               </ul>
             </div>
             <div>
