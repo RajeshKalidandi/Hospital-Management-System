@@ -14,10 +14,18 @@
   status = 200
   to = "/.netlify/functions/api/:splat"
 
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
 [dev]
   command = "npm run dev"
   port = 8888
   targetPort = 5000
+  framework = "#custom"
+  publish = "public"
 
 [build.environment]
-  NODE_VERSION = "18" 
+  NODE_VERSION = "18"
+  NPM_FLAGS = "--legacy-peer-deps" 
