@@ -4,6 +4,8 @@ const API_URL = import.meta.env.PROD
   ? 'https://healthcareclinic-management.netlify.app/.netlify/functions/api'
   : 'http://localhost:5000/api';
 
+console.log('API URL:', API_URL);
+
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
@@ -22,7 +24,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('Making request to:', config.url);
+    console.log('Making request to:', config.url, 'with data:', config.data);
     return config;
   },
   (error) => {
@@ -34,17 +36,24 @@ api.interceptors.request.use(
 // Add response interceptor for error handling
 api.interceptors.response.use(
   (response) => {
-    console.log('Response received:', response.status);
+    console.log('Response received:', {
+      status: response.status,
+      data: response.data
+    });
     return response;
   },
   async (error) => {
-    console.error('Response error:', error);
+    console.error('Response error:', {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
 
     if (error.response?.status === 401) {
       // Clear token and redirect to login
       localStorage.removeItem('token');
       window.location.href = '/admin/login';
-      return Promise.reject(error);
+      return Promise.reject(new Error(error.response.data.message || 'Authentication failed'));
     }
     
     // Network error or server not responding
@@ -53,7 +62,7 @@ api.interceptors.response.use(
       return Promise.reject(new Error('Unable to connect to the server. Please try again later.'));
     }
 
-    return Promise.reject(error);
+    return Promise.reject(new Error(error.response.data.message || 'An error occurred'));
   }
 );
 
@@ -62,8 +71,16 @@ export const authService = {
   login: async (email: string, password: string) => {
     try {
       console.log('Attempting login for:', email);
-      const response = await api.post('/auth/login', { email, password });
-      console.log('Login response:', response.status);
+      const response = await api.post('/auth/login', { 
+        email: email.trim(),
+        password: password.trim()
+      });
+      console.log('Login successful:', response.data);
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+      }
+      
       return response.data;
     } catch (error) {
       console.error('Login failed:', error);
