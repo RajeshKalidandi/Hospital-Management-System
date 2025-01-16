@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const { createServer } = require('http');
+const { Server } = require('socket.io');
 require('dotenv').config();
 
 const authRoutes = require('./routes/authRoutes');
@@ -8,33 +10,68 @@ const patientRoutes = require('./routes/patientRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: {
+    origin: ['http://localhost:5173', 'http://localhost:5174', process.env.FRONTEND_URL].filter(
+      Boolean
+    ),
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
 
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  process.env.FRONTEND_URL
-].filter(Boolean); // Remove any undefined values
+  process.env.FRONTEND_URL,
+].filter(Boolean);
 
-app.use(cors({
-  origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
-  maxAge: 600 // Cache preflight requests for 10 minutes
-}));
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+    maxAge: 600,
+  })
+);
 
 // Regular middleware
 app.use(express.json());
+
+// Socket.IO event handlers
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // Join room for real-time updates (e.g., for specific doctor or patient)
+  socket.on('join-room', (roomId) => {
+    socket.join(roomId);
+    console.log(`Socket ${socket.id} joined room ${roomId}`);
+  });
+
+  // Leave room
+  socket.on('leave-room', (roomId) => {
+    socket.leave(roomId);
+    console.log(`Socket ${socket.id} left room ${roomId}`);
+  });
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -53,8 +90,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Something went wrong!' });
 });
 
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
+// Start the server
+const PORT = process.env.PORT || 3000;
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}); 
+});
+
+// Export for serverless use
+module.exports = { app, httpServer, io };

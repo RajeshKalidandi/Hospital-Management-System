@@ -2,17 +2,8 @@ const supabase = require('../config/supabase');
 
 const createPatient = async (req, res) => {
   try {
-    const {
-      name,
-      email,
-      phone,
-      age,
-      gender,
-      bloodGroup,
-      address,
-      medicalHistory,
-      allergies,
-    } = req.body;
+    const { name, email, phone, age, gender, bloodGroup, address, medicalHistory, allergies } =
+      req.body;
 
     const { data, error } = await supabase
       .from('patients')
@@ -63,7 +54,8 @@ const getPatientById = async (req, res) => {
 
     const { data, error } = await supabase
       .from('patients')
-      .select(`
+      .select(
+        `
         *,
         appointments (
           id,
@@ -73,7 +65,8 @@ const getPatientById = async (req, res) => {
           consultation_mode,
           status
         )
-      `)
+      `
+      )
       .eq('id', id)
       .single();
 
@@ -92,17 +85,8 @@ const getPatientById = async (req, res) => {
 const updatePatient = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      name,
-      email,
-      phone,
-      age,
-      gender,
-      bloodGroup,
-      address,
-      medicalHistory,
-      allergies,
-    } = req.body;
+    const { name, email, phone, age, gender, bloodGroup, address, medicalHistory, allergies } =
+      req.body;
 
     const { data, error } = await supabase
       .from('patients')
@@ -138,10 +122,7 @@ const deletePatient = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const { error } = await supabase
-      .from('patients')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('patients').delete().eq('id', id);
 
     if (error) throw error;
 
@@ -223,4 +204,4 @@ module.exports = {
   deletePatient,
   addMedicalRecord,
   searchPatients,
-}; 
+};

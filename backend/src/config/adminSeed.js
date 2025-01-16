@@ -4,7 +4,7 @@ const supabase = require('./supabase');
 async function seedAdmin() {
   try {
     const hashedPassword = await bcrypt.hash('admin@2025', 10);
-    
+
     // Check if admin already exists
     const { data: existingAdmin } = await supabase
       .from('admins')
@@ -37,4 +37,4 @@ async function seedAdmin() {
 }
 
 // Run the seed function
-seedAdmin(); 
+seedAdmin();

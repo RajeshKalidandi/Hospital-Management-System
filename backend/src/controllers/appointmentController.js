@@ -14,15 +14,7 @@ const transporter = nodemailer.createTransport({
 
 const createAppointment = async (req, res) => {
   try {
-    const {
-      patientName,
-      email,
-      phone,
-      appointmentType,
-      date,
-      time,
-      consultationMode,
-    } = req.body;
+    const { patientName, email, phone, appointmentType, date, time, consultationMode } = req.body;
 
     const { data, error } = await supabase
       .from('appointments')
@@ -62,10 +54,17 @@ const createAppointment = async (req, res) => {
       `,
     });
 
+    // Emit real-time notification
+    const io = req.app.get('io');
+    io.to(`doctor-${data.doctorId}`).emit('new-appointment', {
+      type: 'new-appointment',
+      appointment: data,
+    });
+
     res.status(201).json(data);
   } catch (error) {
-    console.error('Create appointment error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error creating appointment:', error);
+    res.status(500).json({ message: 'Error creating appointment' });
   }
 };
 
@@ -118,10 +117,18 @@ const updateAppointmentStatus = async (req, res) => {
       `,
     });
 
-    res.json(data);
+    // Emit real-time status update
+    const io = req.app.get('io');
+    io.to(`appointment-${id}`).emit('appointment-status-update', {
+      type: 'status-update',
+      appointmentId: id,
+      status: status,
+    });
+
+    res.json({ message: 'Appointment status updated successfully' });
   } catch (error) {
-    console.error('Update appointment status error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error updating appointment status:', error);
+    res.status(500).json({ message: 'Error updating appointment status' });
   }
 };
 
@@ -154,10 +161,7 @@ const deleteAppointment = async (req, res) => {
       .eq('id', id)
       .single();
 
-    const { error } = await supabase
-      .from('appointments')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.from('appointments').delete().eq('id', id);
 
     if (error) throw error;
 
@@ -194,4 +198,4 @@ module.exports = {
   updateAppointmentStatus,
   getAppointmentsByDate,
   deleteAppointment,
-}; 
+};

@@ -1,14 +1,23 @@
 [build]
-  command = "npm install"
+  command = "npm run build"
   functions = "functions"
   publish = "public"
 
 [functions]
-  external_node_modules = ["express"]
+  external_node_modules = ["express", "socket.io", "bcrypt", "jsonwebtoken", "@supabase/supabase-js", "nodemailer"]
   node_bundler = "esbuild"
+  included_files = ["src/**/*", ".env"]
 
 [[redirects]]
   force = true
   from = "/api/*"
   status = 200
-  to = "/.netlify/functions/api/:splat" 
+  to = "/.netlify/functions/api/:splat"
+
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 5000
+
+[build.environment]
+  NODE_VERSION = "18" 

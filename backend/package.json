@@ -5,7 +5,13 @@
   "main": "functions/api.ts",
   "scripts": {
     "start": "nodemon src/index.js",
-    "build": "netlify build"
+    "prebuild": "rimraf functions",
+    "build": "tsc && npm run copy-files",
+    "copy-files": "mkdir functions\\src 2>nul & xcopy /E /I /Y src\\routes functions\\src\\routes & xcopy /E /I /Y src\\controllers functions\\src\\controllers & xcopy /E /I /Y src\\config functions\\src\\config",
+    "dev": "nodemon src/index.js",
+    "netlify-dev": "netlify dev",
+    "test": "node scripts/test-deployment.js",
+    "seed": "node src/config/seedAdmin.js"
   },
   "keywords": [],
   "author": "",
@@ -19,13 +25,22 @@
     "express": "^4.x.x",
     "jsonwebtoken": "^9.x.x",
     "nodemailer": "^6.9.16",
-    "serverless-http": "^3.2.0"
+    "serverless-http": "^3.2.0",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.5",
+    "axios": "^1.7.9",
+    "eslint": "^8.57.1",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.2.2",
     "netlify-cli": "^17.0.0",
     "nodemon": "^3.1.9",
+    "prettier": "^3.4.2",
+    "rimraf": "^6.0.1",
     "typescript": "^5.3.3"
   }
 }

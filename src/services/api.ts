@@ -1,13 +1,13 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.PROD 
-  ? import.meta.env.VITE_API_URL || 'https://your-backend-url.netlify.app/api'
+  ? (import.meta.env.VITE_API_URL || 'https://hospital-management-system-backend.netlify.app/api')
   : 'http://localhost:5000/api';
 
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_URL,
-  withCredentials: false,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   }

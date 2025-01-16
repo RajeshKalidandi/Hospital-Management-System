@@ -77,7 +77,8 @@ const getPayments = async (req, res) => {
   try {
     const { data, error } = await supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         *,
         patients (name, email),
         appointments (
@@ -85,7 +86,8 @@ const getPayments = async (req, res) => {
           date,
           time
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -103,7 +105,8 @@ const getPaymentById = async (req, res) => {
 
     const { data, error } = await supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         *,
         patients (name, email),
         appointments (
@@ -111,7 +114,8 @@ const getPaymentById = async (req, res) => {
           date,
           time
         )
-      `)
+      `
+      )
       .eq('id', id)
       .single();
 
@@ -177,9 +181,7 @@ const generatePaymentReport = async (req, res) => {
   try {
     const { startDate, endDate, status } = req.query;
 
-    let query = supabase
-      .from('payments')
-      .select(`
+    let query = supabase.from('payments').select(`
         *,
         patients (name),
         appointments (appointment_type)
@@ -227,14 +229,16 @@ const getPaymentsByPatient = async (req, res) => {
 
     const { data, error } = await supabase
       .from('payments')
-      .select(`
+      .select(
+        `
         *,
         appointments (
           appointment_type,
           date,
           time
         )
-      `)
+      `
+      )
       .eq('patient_id', patientId)
       .order('created_at', { ascending: false });
 
@@ -254,4 +258,4 @@ module.exports = {
   updatePaymentStatus,
   generatePaymentReport,
   getPaymentsByPatient,
-}; 
+};

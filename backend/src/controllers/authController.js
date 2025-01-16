@@ -5,6 +5,7 @@ const supabase = require('../config/supabase');
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log('Login attempt for email:', email);
 
     const { data: admin, error } = await supabase
       .from('admins')
@@ -12,12 +13,23 @@ const login = async (req, res) => {
       .eq('email', email)
       .single();
 
-    if (error || !admin) {
+    if (error) {
+      console.error('Supabase error:', error);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    if (!admin) {
+      console.error('Admin not found for email:', email);
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    console.log('Admin found:', { id: admin.id, email: admin.email });
+
     const isValidPassword = await bcrypt.compare(password, admin.password);
+    console.log('Password validation result:', isValidPassword);
+
     if (!isValidPassword) {
+      console.error('Invalid password for email:', email);
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
@@ -27,6 +39,7 @@ const login = async (req, res) => {
       { expiresIn: '24h' }
     );
 
+    console.log('Login successful for:', email);
     res.json({ token, admin: { id: admin.id, email: admin.email } });
   } catch (error) {
     console.error('Login error:', error);
