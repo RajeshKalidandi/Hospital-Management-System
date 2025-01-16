@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API_URL = import.meta.env.PROD 
-  ? (import.meta.env.VITE_API_URL || 'https://healthcareclinic-management.netlify.app/.netlify/functions/api')
+  ? 'https://healthcareclinic-management.netlify.app/.netlify/functions/api'
   : 'http://localhost:5000/api';
 
 // Create axios instance with default config
@@ -10,7 +10,9 @@ const api = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
+  // Add timeout
+  timeout: 10000,
 });
 
 // Add auth token to requests if available
@@ -20,6 +22,7 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    console.log('Making request to:', config.url);
     return config;
   },
   (error) => {
@@ -30,8 +33,13 @@ api.interceptors.request.use(
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('Response received:', response.status);
+    return response;
+  },
   async (error) => {
+    console.error('Response error:', error);
+
     if (error.response?.status === 401) {
       // Clear token and redirect to login
       localStorage.removeItem('token');
@@ -52,8 +60,15 @@ api.interceptors.response.use(
 // API Services
 export const authService = {
   login: async (email: string, password: string) => {
-    const response = await api.post('/auth/login', { email, password });
-    return response.data;
+    try {
+      console.log('Attempting login for:', email);
+      const response = await api.post('/auth/login', { email, password });
+      console.log('Login response:', response.status);
+      return response.data;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    }
   },
   changePassword: async (currentPassword: string, newPassword: string) => {
     const response = await api.post('/auth/change-password', {
