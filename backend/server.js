@@ -32,9 +32,6 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Pre-flight requests
-app.options('*', cors());
-
 app.use(express.json());
 
 // Logging middleware
@@ -92,6 +89,18 @@ exports.handler = async (event, context) => {
     headers: event.headers
   });
 
+  // Strip /.netlify/functions/api prefix if present
+  if (event.path.startsWith('/.netlify/functions/api')) {
+    event.path = event.path.replace('/.netlify/functions/api', '');
+  }
+
+  // Ensure path starts with /
+  if (!event.path.startsWith('/')) {
+    event.path = '/' + event.path;
+  }
+
+  console.log('Processed path:', event.path);
+
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
@@ -106,19 +115,47 @@ exports.handler = async (event, context) => {
   }
 
   try {
+    // Add custom headers to the event
+    event.headers = {
+      ...event.headers,
+      'x-netlify-function': 'true'
+    };
+
     const result = await handler(event, context);
+    
+    // Ensure CORS headers are present in the response
+    const headers = {
+      'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Credentials': 'true',
+      ...result.headers
+    };
+
     console.log('Response:', {
       statusCode: result.statusCode,
-      headers: result.headers
+      headers: headers
     });
-    return result;
+
+    return {
+      ...result,
+      headers: headers
+    };
   } catch (error) {
     console.error('Handler error:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error.message
+        message: error.message,
+        path: event.path
       })
     };
   }
