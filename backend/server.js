@@ -14,8 +14,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
-  'https://healthcareclinic-management.netlify.app',
-].filter(Boolean);
+  'https://healthcareclinic-management.netlify.app'
+];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -23,11 +23,17 @@ app.use(cors({
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.error('Not allowed by CORS:', origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
+// Pre-flight requests
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -36,7 +42,8 @@ app.use((req, res, next) => {
   console.log(`${req.method} ${req.path}`, {
     body: req.body,
     query: req.query,
-    headers: req.headers
+    headers: req.headers,
+    origin: req.get('origin')
   });
   next();
 });
@@ -52,7 +59,8 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok',
     message: 'API is running',
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -61,7 +69,8 @@ app.use((err, req, res, next) => {
   console.error('Error:', err.stack);
   res.status(500).json({ 
     error: 'Internal Server Error',
-    message: err.message 
+    message: err.message,
+    path: req.path
   });
 });
 
@@ -74,4 +83,43 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 // For Netlify Functions
-exports.handler = serverless(app); 
+const handler = serverless(app);
+exports.handler = async (event, context) => {
+  // Log the incoming request
+  console.log('Incoming request:', {
+    path: event.path,
+    httpMethod: event.httpMethod,
+    headers: event.headers
+  });
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: {
+        'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Credentials': 'true',
+      }
+    };
+  }
+
+  try {
+    const result = await handler(event, context);
+    console.log('Response:', {
+      statusCode: result.statusCode,
+      headers: result.headers
+    });
+    return result;
+  } catch (error) {
+    console.error('Handler error:', error);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({
+        error: 'Internal Server Error',
+        message: error.message
+      })
+    };
+  }
+}; 
