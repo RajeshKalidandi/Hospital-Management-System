@@ -8,10 +8,18 @@
   node_bundler = "esbuild"
   included_files = ["src/**/*", ".env"]
 
+# API redirects first to ensure they take precedence
 [[redirects]]
-  from = "/*"
-  to = "/index.html"
+  from = "/.netlify/functions/api/auth/*"
+  to = "/.netlify/functions/api/:splat"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/auth/*"
+  to = "/.netlify/functions/api/auth/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/api/*"
@@ -19,11 +27,11 @@
   status = 200
   force = true
 
+# SPA fallback should be last
 [[redirects]]
-  from = "/.netlify/functions/api/*"
-  to = "/.netlify/functions/api/:splat"
+  from = "/*"
+  to = "/index.html"
   status = 200
-  force = true
 
 [dev]
   command = "npm run dev"
