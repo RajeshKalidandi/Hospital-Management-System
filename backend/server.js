@@ -27,15 +27,17 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', DELETE, 'OPTIONS'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// Body parsing middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
     body: req.body,
     query: req.query,
     headers: req.headers,
@@ -56,7 +58,8 @@ app.get('/api/health', (req, res) => {
     status: 'ok',
     message: 'API is running',
     env: process.env.NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version
   });
 });
 
@@ -68,21 +71,33 @@ app.get('/api/debug', (req, res) => {
     baseUrl: req.baseUrl,
     headers: req.headers,
     method: req.method,
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
+  console.error('[ERROR]', new Date().toISOString(), err.stack);
+  res.status(err.status || 500).json({ 
+    error: err.name || 'Internal Server Error',
     message: err.message,
-    path: req.path
+    path: req.path,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Cannot ${req.method} ${req.path}`,
+    timestamp: new Date().toISOString()
   });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`[${new Date().toISOString()}] Server is running on port ${PORT}`);
+  console.log(`[${new Date().toISOString()}] Environment: ${process.env.NODE_ENV || 'development'}`);
 }); 

@@ -17,7 +17,7 @@ const allowedOrigins = [
   'https://healthcareclinic-management.netlify.app'
 ];
 
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
     console.log('Request origin:', origin);
     if (!origin || allowedOrigins.includes(origin)) {
@@ -28,15 +28,19 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
   allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
 
+app.use(cors(corsOptions));
+
+// Body parsing middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
     body: req.body,
     query: req.query,
     headers: req.headers,
@@ -57,7 +61,8 @@ app.get('/health', (req, res) => {
     status: 'ok',
     message: 'API is running',
     env: process.env.NODE_ENV,
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    version: process.env.npm_package_version
   });
 });
 
@@ -69,27 +74,47 @@ app.get('/debug', (req, res) => {
     baseUrl: req.baseUrl,
     headers: req.headers,
     method: req.method,
-    env: process.env.NODE_ENV
+    env: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
   });
 });
 
-// Error handling
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error('Error:', err.stack);
-  res.status(500).json({ 
-    error: 'Internal Server Error',
+  console.error('[ERROR]', new Date().toISOString(), err.stack);
+  res.status(err.status || 500).json({ 
+    error: err.name || 'Internal Server Error',
     message: err.message,
-    path: req.path
+    path: req.path,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Cannot ${req.method} ${req.path}`,
+    timestamp: new Date().toISOString()
   });
 });
 
 // Create serverless handler
 const handler = serverless(app);
 
+// Common headers for all responses
+const commonHeaders = {
+  'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
+  'Access-Control-Allow-Methods': 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+  'Content-Type': 'application/json'
+};
+
 // Export the handler function
 exports.handler = async (event, context) => {
   // Log the incoming request
-  console.log('Incoming request:', {
+  console.log('[REQUEST]', new Date().toISOString(), {
     path: event.path,
     httpMethod: event.httpMethod,
     headers: event.headers,
@@ -116,18 +141,13 @@ exports.handler = async (event, context) => {
   // Update the event path
   event.path = cleanPath;
 
-  console.log('Processed path:', event.path);
+  console.log('[PATH]', new Date().toISOString(), 'Processed path:', event.path);
 
   // Handle preflight requests
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-      }
+      headers: commonHeaders
     };
   }
 
@@ -136,33 +156,29 @@ exports.handler = async (event, context) => {
     
     // Ensure CORS headers are present in the response
     const headers = {
-      'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
-      'Content-Type': 'application/json',
+      ...commonHeaders,
       ...result.headers
     };
+
+    console.log('[RESPONSE]', new Date().toISOString(), {
+      statusCode: result.statusCode,
+      headers: headers
+    });
 
     return {
       ...result,
       headers: headers
     };
   } catch (error) {
-    console.error('Handler error:', error);
+    console.error('[ERROR]', new Date().toISOString(), error);
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-        'Content-Type': 'application/json'
-      },
+      headers: commonHeaders,
       body: JSON.stringify({
         error: 'Internal Server Error',
         message: error.message,
-        path: event.path
+        path: event.path,
+        timestamp: new Date().toISOString()
       })
     };
   }
