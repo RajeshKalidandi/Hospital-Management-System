@@ -36,21 +36,16 @@ app.use(cors({
 
 // Request logging middleware
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.path}`, {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`, {
     headers: req.headers,
     body: req.body,
-    query: req.query
+    query: req.query,
+    params: req.params
   });
   next();
 });
 
 app.use(express.json());
-
-// Routes without .netlify prefix (handled by redirects)
-app.use('/auth', authRoutes);
-app.use('/appointments', appointmentRoutes);
-app.use('/patients', patientRoutes);
-app.use('/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -58,6 +53,43 @@ app.get('/health', (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     env: process.env.NODE_ENV
+  });
+});
+
+// Auth routes first
+app.use('/auth', authRoutes);
+
+// Other routes
+app.use('/appointments', appointmentRoutes);
+app.use('/patients', patientRoutes);
+app.use('/payments', paymentRoutes);
+
+// Test auth endpoint
+app.post('/test-auth', (req, res) => {
+  console.log('Test auth endpoint hit:', {
+    body: req.body,
+    headers: req.headers
+  });
+  res.json({ message: 'Test auth endpoint working' });
+});
+
+// Catch-all route for debugging
+app.use('*', (req, res) => {
+  console.log('404 - Route not found:', {
+    method: req.method,
+    url: req.url,
+    baseUrl: req.baseUrl,
+    originalUrl: req.originalUrl,
+    path: req.path,
+    body: req.body,
+    headers: req.headers
+  });
+  res.status(404).json({
+    error: 'Route not found',
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -88,12 +120,23 @@ module.exports.handler = async (event, context) => {
   // Strip /.netlify/functions/api prefix if present
   if (event.path.startsWith('/.netlify/functions/api')) {
     event.path = event.path.replace('/.netlify/functions/api', '');
+    console.log('Stripped path:', event.path);
   }
 
   try {
+    // Parse body if it's a string
+    if (typeof event.body === 'string') {
+      try {
+        event.body = JSON.parse(event.body);
+      } catch (e) {
+        console.log('Failed to parse body:', e);
+      }
+    }
+
     const result = await handler(event, context);
     console.log('Response:', {
-      ...result,
+      statusCode: result.statusCode,
+      body: result.body,
       timestamp: new Date().toISOString()
     });
     return result;
