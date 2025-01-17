@@ -2,19 +2,17 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Hospital Management System Backend",
-  "main": "functions/api.js",
+  "main": "server.js",
   "scripts": {
-    "start": "nodemon src/index.js",
-    "prebuild": "rimraf functions",
-    "build": "mkdir functions && xcopy /E /I /Y src functions\\src && copy api.js functions\\",
-    "dev": "nodemon src/index.js",
-    "netlify-dev": "netlify dev"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "build": "mkdir -p public"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@netlify/functions": "^2.0.0",
+    "@netlify/edge-functions": "^2.0.0",
     "@supabase/supabase-js": "^2.x.x",
     "bcrypt": "^5.1.1",
     "cors": "^2.x.x",
@@ -22,22 +20,13 @@
     "express": "^4.x.x",
     "jsonwebtoken": "^9.x.x",
     "nodemailer": "^6.9.16",
-    "serverless-http": "^3.2.0",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.5",
-    "axios": "^1.7.9",
-    "eslint": "^8.57.1",
-    "eslint-config-airbnb-base": "^15.0.0",
-    "eslint-config-prettier": "^10.0.1",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-prettier": "^5.2.2",
     "netlify-cli": "^17.0.0",
     "nodemon": "^3.1.9",
-    "prettier": "^3.4.2",
-    "rimraf": "^6.0.1",
     "typescript": "^5.3.3"
   }
 }
