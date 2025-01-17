@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.PROD 
   ? 'https://healthcareclinic-management.netlify.app/.netlify/functions/api'
-  : 'http://localhost:5000/api';
+  : 'http://localhost:5000/.netlify/functions/api';
 
 console.log('API URL:', API_URL);
 
@@ -13,6 +13,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Add timeout
   timeout: 10000,
 });
 
@@ -49,11 +50,13 @@ api.interceptors.response.use(
     });
 
     if (error.response?.status === 401) {
+      // Clear token and redirect to login
       localStorage.removeItem('token');
       window.location.href = '/admin/login';
       return Promise.reject(new Error(error.response.data.message || 'Authentication failed'));
     }
     
+    // Network error or server not responding
     if (!error.response) {
       console.error('Network error or server not responding');
       return Promise.reject(new Error('Unable to connect to the server. Please try again later.'));
