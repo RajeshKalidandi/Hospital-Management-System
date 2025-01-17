@@ -1,30 +1,23 @@
-import axios from 'axios';
+import axios, { AxiosError, AxiosResponse } from 'axios';
 
-const API_URL = import.meta.env.PROD 
-  ? 'https://healthcareclinic-management.netlify.app/.netlify/functions/api'
-  : 'http://localhost:8888/.netlify/functions/api';
-
-console.log('API URL:', API_URL);
+const BASE_URL = import.meta.env.VITE_API_URL || '/.netlify/functions/api';
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: API_URL,
-  withCredentials: true,
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  // Add timeout
-  timeout: 15000,
+  withCredentials: true,
 });
 
-// Add auth token to requests if available
+// Add request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-    console.log('Making request to:', config.url, 'with data:', config.data);
     return config;
   },
   (error) => {
@@ -35,161 +28,112 @@ api.interceptors.request.use(
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
-  (response) => {
-    console.log('Response received:', {
-      status: response.status,
-      data: response.data
-    });
-    return response;
-  },
-  async (error) => {
-    console.error('Response error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
+  (response) => response,
+  async (error: AxiosError) => {
+    console.error('Response error:', error);
 
     if (error.response?.status === 401) {
-      // Clear token and redirect to login
+      // Clear invalid token
       localStorage.removeItem('token');
-      window.location.href = '/admin/login';
-      return Promise.reject(new Error('Session expired. Please login again.'));
-    }
-    
-    // Network error or server not responding
-    if (!error.response) {
-      return Promise.reject(new Error('Unable to connect to the server. Please check your internet connection.'));
-    }
-
-    // Rate limiting
-    if (error.response.status === 429) {
-      return Promise.reject(new Error('Too many requests. Please try again later.'));
+      localStorage.removeItem('user');
+      
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
     }
 
-    return Promise.reject(new Error(error.response.data.message || 'An unexpected error occurred.'));
+    return Promise.reject(error);
   }
 );
 
-// API Services
-export const authService = {
-  login: async (email: string, password: string) => {
+// Helper to handle API errors
+const handleApiError = (error: any): never => {
+  if (error.response?.data?.error) {
+    throw new Error(error.response.data.error);
+  }
+  throw new Error('An unexpected error occurred.');
+};
+
+// Types
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    role: string;
+    name: string;
+  };
+  message: string;
+}
+
+interface User {
+  id: string;
+  email: string;
+  role: string;
+  name: string;
+}
+
+// Auth service
+const auth = {
+  async login(email: string, password: string): Promise<User> {
     try {
-      console.log('Attempting login for:', email);
-      const response = await api.post('/auth/login', { 
-        email: email.trim(),
-        password: password.trim()
+      const response: AxiosResponse<LoginResponse> = await api.post('/auth/login', {
+        email,
+        password,
       });
-      console.log('Login successful:', response.data);
+
+      const { token, user } = response.data;
       
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-      }
+      // Store auth data
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
       
-      return response.data;
+      return user;
     } catch (error) {
       console.error('Login failed:', error);
-      throw error;
+      throw handleApiError(error);
     }
   },
-  changePassword: async (currentPassword: string, newPassword: string) => {
-    const response = await api.post('/auth/change-password', {
-      currentPassword,
-      newPassword,
-    });
-    return response.data;
+
+  async verifyToken(): Promise<User | null> {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        return null;
+      }
+
+      const response = await api.get('/auth/verify');
+      return response.data.user;
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return null;
+    }
+  },
+
+  logout(): void {
+    try {
+      // Call logout endpoint
+      api.post('/auth/logout').catch(console.error);
+    } finally {
+      // Clear local storage regardless of API call result
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+  },
+
+  getUser(): User | null {
+    const userStr = localStorage.getItem('user');
+    return userStr ? JSON.parse(userStr) : null;
+  },
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('token');
   },
 };
 
-export const appointmentService = {
-  create: async (appointmentData: any) => {
-    const response = await api.post('/appointments', appointmentData);
-    return response.data;
-  },
-  getAll: async () => {
-    const response = await api.get('/appointments');
-    return response.data;
-  },
-  getById: async (id: string) => {
-    const response = await api.get(`/appointments/${id}`);
-    return response.data;
-  },
-  updateStatus: async (id: string, status: string) => {
-    const response = await api.put(`/appointments/${id}/status`, { status });
-    return response.data;
-  },
-  delete: async (id: string) => {
-    const response = await api.delete(`/appointments/${id}`);
-    return response.data;
-  },
-};
-
-export const patientService = {
-  create: async (patientData: any) => {
-    const response = await api.post('/patients', patientData);
-    return response.data;
-  },
-  getAll: async () => {
-    const response = await api.get('/patients');
-    return response.data;
-  },
-  search: async (query: string) => {
-    const response = await api.get(`/patients/search?query=${query}`);
-    return response.data;
-  },
-  getById: async (id: string) => {
-    const response = await api.get(`/patients/${id}`);
-    return response.data;
-  },
-  update: async (id: string, patientData: any) => {
-    const response = await api.put(`/patients/${id}`, patientData);
-    return response.data;
-  },
-  delete: async (id: string) => {
-    const response = await api.delete(`/patients/${id}`);
-    return response.data;
-  },
-  addMedicalRecord: async (id: string, recordData: any) => {
-    const response = await api.post(`/patients/${id}/medical-records`, recordData);
-    return response.data;
-  },
-};
-
-export const paymentService = {
-  create: async (paymentData: any) => {
-    const response = await api.post('/payments', paymentData);
-    return response.data;
-  },
-  getAll: async () => {
-    const response = await api.get('/payments');
-    return response.data;
-  },
-  getReport: async (params: any) => {
-    const response = await api.get('/payments/report', { params });
-    return response.data;
-  },
-  getById: async (id: string) => {
-    const response = await api.get(`/payments/${id}`);
-    return response.data;
-  },
-  updateStatus: async (id: string, status: string) => {
-    const response = await api.put(`/payments/${id}/status`, { status });
-    return response.data;
-  },
-};
-
-export const paymentGatewayService = {
-  createStripePayment: async (paymentData: any) => {
-    const response = await api.post('/payment-gateway/stripe/create-payment', paymentData);
-    return response.data;
-  },
-  createRazorpayPayment: async (paymentData: any) => {
-    const response = await api.post('/payment-gateway/razorpay/create-payment', paymentData);
-    return response.data;
-  },
-  verifyRazorpayPayment: async (verificationData: any) => {
-    const response = await api.post('/payment-gateway/razorpay/verify-payment', verificationData);
-    return response.data;
-  },
-};
-
+// Export the auth service
+export { auth };
 export default api; 
