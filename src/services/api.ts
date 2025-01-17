@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.PROD 
   ? 'https://healthcareclinic-management.netlify.app/.netlify/functions/api'
-  : 'http://localhost:5000/api';
+  : 'http://localhost:5000/.netlify/functions/api';
 
 console.log('API URL:', API_URL);
 

@@ -1,5 +1,5 @@
 [build]
-  command = "npm run build"
+  command = "npm install && npm run build"
   functions = "functions"
   publish = "public"
 
@@ -10,9 +10,15 @@
 
 [[redirects]]
   force = true
-  from = "/api/*"
-  status = 200
+  from = "/.netlify/functions/api/*"
   to = "/.netlify/functions/api/:splat"
+  status = 200
+
+[[redirects]]
+  force = true
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"
@@ -31,4 +37,4 @@
   NPM_FLAGS = "--legacy-peer-deps"
 
 [[plugins]]
-package = "@netlify/plugin-functions-install-core" 
+  package = "@netlify/plugin-functions-install-core" 
