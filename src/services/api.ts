@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.PROD 
   ? 'https://healthcareclinic-management.netlify.app/.netlify/functions/api'
-  : 'http://localhost:5000/.netlify/functions/api';
+  : 'http://localhost:8888/.netlify/functions/api';
 
 console.log('API URL:', API_URL);
 
@@ -14,7 +14,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   // Add timeout
-  timeout: 10000,
+  timeout: 15000,
 });
 
 // Add auth token to requests if available
@@ -53,16 +53,20 @@ api.interceptors.response.use(
       // Clear token and redirect to login
       localStorage.removeItem('token');
       window.location.href = '/admin/login';
-      return Promise.reject(new Error(error.response.data.message || 'Authentication failed'));
+      return Promise.reject(new Error('Session expired. Please login again.'));
     }
     
     // Network error or server not responding
     if (!error.response) {
-      console.error('Network error or server not responding');
-      return Promise.reject(new Error('Unable to connect to the server. Please try again later.'));
+      return Promise.reject(new Error('Unable to connect to the server. Please check your internet connection.'));
     }
 
-    return Promise.reject(new Error(error.response.data.message || 'An error occurred'));
+    // Rate limiting
+    if (error.response.status === 429) {
+      return Promise.reject(new Error('Too many requests. Please try again later.'));
+    }
+
+    return Promise.reject(new Error(error.response.data.message || 'An unexpected error occurred.'));
   }
 );
 
