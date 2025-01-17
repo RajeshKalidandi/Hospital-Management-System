@@ -2,9 +2,19 @@
   command = "npm install && npm run build"
   publish = "public"
 
-[[edge_functions]]
-  path = "/api/*"
-  function = "api"
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  directory = "functions"
 
 [[headers]]
   for = "/*"
@@ -14,15 +24,8 @@
     Access-Control-Allow-Headers = "Content-Type, Authorization"
     Access-Control-Allow-Credentials = "true"
 
-[dev]
-  command = "npm run dev"
-  port = 8888
-  targetPort = 5000
-  framework = "#custom"
-
 [build.environment]
   NODE_VERSION = "18"
-  NPM_FLAGS = "--legacy-peer-deps"
 
 [[plugins]]
   package = "@netlify/plugin-functions-install-core" 

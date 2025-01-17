@@ -6,13 +6,13 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "mkdir -p public"
+    "build": "npm install && mkdir -p functions && cp -r src functions/ && cp server.js functions/api.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@netlify/edge-functions": "^2.0.0",
+    "@netlify/functions": "^2.0.0",
     "@supabase/supabase-js": "^2.x.x",
     "bcrypt": "^5.1.1",
     "cors": "^2.x.x",
@@ -20,13 +20,13 @@
     "express": "^4.x.x",
     "jsonwebtoken": "^9.x.x",
     "nodemailer": "^6.9.16",
+    "serverless-http": "^3.2.0",
     "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.5",
     "netlify-cli": "^17.0.0",
-    "nodemon": "^3.1.9",
-    "typescript": "^5.3.3"
+    "nodemon": "^3.1.9"
   }
 }
