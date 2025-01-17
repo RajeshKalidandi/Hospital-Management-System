@@ -1,48 +1,23 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AdminLayout } from './components/admin/AdminLayout';
-import { Home } from './pages/Home';
-import { Login } from './pages/Login';
-import { Dashboard } from './pages/admin/Dashboard';
-import { Patients } from './pages/admin/Patients';
-import { Appointments } from './pages/admin/Appointments';
-import { WhatsAppBookings } from './pages/admin/WhatsAppBookings';
-import { VideoConsultations } from './pages/admin/VideoConsultations';
-import { Payments } from './pages/admin/Payments';
-import { Settings } from './pages/admin/Settings';
-import ProtectedRoute from './components/ProtectedRoute';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import theme from './theme';
+import Home from './pages/Home';
+import Login from './pages/Login';
 
-function App() {
+const App: React.FC = () => {
   return (
-    <Router>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/admin/login" element={<Login />} />
-
-        {/* Protected Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute>
-              <AdminLayout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-          <Route path="patients" element={<Patients />} />
-          <Route path="appointments" element={<Appointments />} />
-          <Route path="whatsapp" element={<WhatsAppBookings />} />
-          <Route path="consultations" element={<VideoConsultations />} />
-          <Route path="payments" element={<Payments />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-
-        {/* Fallback route */}
-        <Route path="*" element={<Navigate to="/admin/login" replace />} />
-      </Routes>
-    </Router>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Router>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
+        </Routes>
+      </Router>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
