@@ -8,6 +8,13 @@
   external_node_modules = ["express", "socket.io", "bcrypt", "jsonwebtoken", "@supabase/supabase-js", "nodemailer"]
   node_bundler = "esbuild"
   included_files = ["src/**/*", ".env"]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/.netlify/functions/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
 
 [[redirects]]
   from = "/api/*"
