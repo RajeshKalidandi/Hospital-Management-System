@@ -56,10 +56,8 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Auth routes first
+// Mount routes without /api prefix since it's handled by Netlify redirects
 app.use('/auth', authRoutes);
-
-// Other routes
 app.use('/appointments', appointmentRoutes);
 app.use('/patients', patientRoutes);
 app.use('/payments', paymentRoutes);
@@ -71,6 +69,18 @@ app.post('/test-auth', (req, res) => {
     headers: req.headers
   });
   res.json({ message: 'Test auth endpoint working' });
+});
+
+// Debug middleware to log route matching
+app.use((req, res, next) => {
+  console.log('Route matching debug:', {
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    path: req.path,
+    method: req.method,
+    timestamp: new Date().toISOString()
+  });
+  next();
 });
 
 // Catch-all route for debugging
@@ -119,17 +129,31 @@ module.exports.handler = async (event, context) => {
 
   // Strip /.netlify/functions/api prefix if present
   if (event.path.startsWith('/.netlify/functions/api')) {
+    const originalPath = event.path;
     event.path = event.path.replace('/.netlify/functions/api', '');
-    console.log('Stripped path:', event.path);
+    console.log('Path transformation:', {
+      originalPath,
+      newPath: event.path,
+      timestamp: new Date().toISOString()
+    });
   }
 
   try {
     // Parse body if it's a string
-    if (typeof event.body === 'string') {
+    if (typeof event.body === 'string' && event.body) {
       try {
         event.body = JSON.parse(event.body);
+        console.log('Parsed request body:', event.body);
       } catch (e) {
-        console.log('Failed to parse body:', e);
+        console.error('Body parsing error:', e);
+        return {
+          statusCode: 400,
+          body: JSON.stringify({
+            error: 'Invalid JSON in request body',
+            message: e.message,
+            timestamp: new Date().toISOString()
+          })
+        };
       }
     }
 
@@ -147,6 +171,7 @@ module.exports.handler = async (event, context) => {
       body: JSON.stringify({
         error: 'Internal Server Error',
         message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
         timestamp: new Date().toISOString()
       })
     };

@@ -9,19 +9,18 @@
   included_files = ["src/**/*", ".env"]
 
 [[redirects]]
-  from = "/.netlify/functions/api/auth/*"
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/.netlify/functions/api/*"
-  to = "/.netlify/functions/api/:splat"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
