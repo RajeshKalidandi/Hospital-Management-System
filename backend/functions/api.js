@@ -15,6 +15,7 @@ const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
   'https://healthcareclinic-management.netlify.app',
+  process.env.FRONTEND_URL
 ].filter(Boolean);
 
 app.use(cors({
@@ -30,6 +31,7 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['Authorization']
 }));
 
 // Request logging middleware
@@ -52,7 +54,11 @@ app.use('/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({ 
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
+  });
 });
 
 // Error handling middleware
@@ -62,7 +68,8 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ 
     error: err.message || 'Internal Server Error',
     path: req.path,
-    method: req.method
+    method: req.method,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -74,7 +81,8 @@ module.exports.handler = async (event, context) => {
     path: event.path,
     httpMethod: event.httpMethod,
     headers: event.headers,
-    body: event.body
+    body: event.body,
+    timestamp: new Date().toISOString()
   });
 
   // Strip /.netlify/functions/api prefix if present
@@ -84,7 +92,10 @@ module.exports.handler = async (event, context) => {
 
   try {
     const result = await handler(event, context);
-    console.log('Response:', result);
+    console.log('Response:', {
+      ...result,
+      timestamp: new Date().toISOString()
+    });
     return result;
   } catch (error) {
     console.error('Handler error:', error);
@@ -92,7 +103,8 @@ module.exports.handler = async (event, context) => {
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error.message
+        message: error.message,
+        timestamp: new Date().toISOString()
       })
     };
   }

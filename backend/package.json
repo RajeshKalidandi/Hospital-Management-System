@@ -7,7 +7,7 @@
     "start": "nodemon src/index.js",
     "prebuild": "rimraf functions",
     "build": "npm run copy-files",
-    "copy-files": "mkdir -p functions/src && cp -r src/routes src/controllers src/config functions/src/ && cp -r src/middleware functions/src/ && cp functions/api.js functions/",
+    "copy-files": "mkdir functions\\src 2>nul && xcopy /E /I /Y src\\routes functions\\src\\routes && xcopy /E /I /Y src\\controllers functions\\src\\controllers && xcopy /E /I /Y src\\config functions\\src\\config && xcopy /E /I /Y src\\middleware functions\\src\\middleware && copy /Y functions\\api.js functions\\",
     "dev": "nodemon src/index.js",
     "netlify-dev": "netlify dev",
     "test": "node scripts/test-deployment.js",
