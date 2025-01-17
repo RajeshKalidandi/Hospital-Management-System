@@ -1,7 +1,12 @@
 const express = require('express');
 const serverless = require('serverless-http');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
+
+// Log the current directory and files for debugging
+console.log('Current directory:', __dirname);
+console.log('Files in directory:', require('fs').readdirSync(__dirname));
 
 const authRoutes = require('./src/routes/authRoutes');
 const appointmentRoutes = require('./src/routes/appointmentRoutes');
@@ -19,6 +24,7 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
+    console.log('Request origin:', origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -30,7 +36,18 @@ app.use(cors({
 
 app.use(express.json());
 
-// Basic routes (without .netlify prefix)
+// Logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.path}`, {
+    body: req.body,
+    query: req.query,
+    params: req.params,
+    headers: req.headers
+  });
+  next();
+});
+
+// Basic routes
 app.use('/auth', authRoutes);
 app.use('/appointments', appointmentRoutes);
 app.use('/patients', patientRoutes);
@@ -38,7 +55,12 @@ app.use('/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'API is running' });
+  res.status(200).json({ 
+    status: 'ok', 
+    message: 'API is running',
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Debug endpoint
@@ -47,7 +69,14 @@ app.get('/debug', (req, res) => {
     path: req.path,
     originalUrl: req.originalUrl,
     baseUrl: req.baseUrl,
-    headers: req.headers
+    headers: req.headers,
+    method: req.method,
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      NETLIFY: process.env.NETLIFY
+    },
+    dirname: __dirname,
+    files: require('fs').readdirSync(__dirname)
   });
 });
 
@@ -57,16 +86,23 @@ app.use((err, req, res, next) => {
   console.error('Stack:', err.stack);
   res.status(500).json({ 
     error: 'Internal Server Error',
-    message: err.message 
+    message: err.message,
+    path: req.path
   });
 });
 
 // Handle 404s
 app.use((req, res) => {
-  console.log('404 Not Found:', req.method, req.originalUrl);
+  console.log('404 Not Found:', {
+    method: req.method,
+    path: req.path,
+    originalUrl: req.originalUrl,
+    headers: req.headers
+  });
   res.status(404).json({
     error: 'Not Found',
-    message: `Cannot ${req.method} ${req.originalUrl}`
+    message: `Cannot ${req.method} ${req.originalUrl}`,
+    path: req.path
   });
 });
 
@@ -77,14 +113,21 @@ module.exports.handler = async (event, context) => {
   console.log('Incoming request:', {
     path: event.path,
     httpMethod: event.httpMethod,
-    headers: event.headers
+    headers: event.headers,
+    body: event.body
   });
 
   // Strip /.netlify/functions/api prefix if present
   if (event.path.startsWith('/.netlify/functions/api')) {
     event.path = event.path.replace('/.netlify/functions/api', '');
-    console.log('Stripped path:', event.path);
   }
+  
+  // Ensure path starts with /
+  if (!event.path.startsWith('/')) {
+    event.path = '/' + event.path;
+  }
+
+  console.log('Processed path:', event.path);
 
   try {
     const result = await handler(event, context);
@@ -99,7 +142,8 @@ module.exports.handler = async (event, context) => {
       statusCode: 500,
       body: JSON.stringify({
         error: 'Internal Server Error',
-        message: error.message
+        message: error.message,
+        path: event.path
       })
     };
   }

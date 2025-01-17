@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon src/index.js",
     "prebuild": "rimraf functions",
-    "build": "mkdir -p functions && cp -r src functions/ && cp api.js functions/",
+    "build": "mkdir functions && xcopy /E /I /Y src functions\\src && copy api.js functions\\",
     "dev": "nodemon src/index.js",
     "netlify-dev": "netlify dev"
   },
