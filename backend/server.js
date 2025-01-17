@@ -1,5 +1,4 @@
 const express = require('express');
-const serverless = require('serverless-http');
 const cors = require('cors');
 require('dotenv').config();
 
@@ -28,7 +27,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', DELETE, 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -46,18 +45,30 @@ app.use((req, res, next) => {
 });
 
 // Routes
-app.use('/auth', authRoutes);
-app.use('/appointments', appointmentRoutes);
-app.use('/patients', patientRoutes);
-app.use('/payments', paymentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/appointments', appointmentRoutes);
+app.use('/api/patients', patientRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.status(200).json({ 
     status: 'ok',
     message: 'API is running',
     env: process.env.NODE_ENV,
     timestamp: new Date().toISOString()
+  });
+});
+
+// Debug endpoint
+app.get('/api/debug', (req, res) => {
+  res.status(200).json({
+    path: req.path,
+    originalUrl: req.originalUrl,
+    baseUrl: req.baseUrl,
+    headers: req.headers,
+    method: req.method,
+    env: process.env.NODE_ENV
   });
 });
 
@@ -71,92 +82,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// For local development
-if (process.env.NODE_ENV !== 'production') {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-}
-
-// For Netlify Functions
-const handler = serverless(app);
-exports.handler = async (event, context) => {
-  // Log the incoming request
-  console.log('Incoming request:', {
-    path: event.path,
-    httpMethod: event.httpMethod,
-    headers: event.headers
-  });
-
-  // Strip /.netlify/functions/api prefix if present
-  if (event.path.startsWith('/.netlify/functions/api')) {
-    event.path = event.path.replace('/.netlify/functions/api', '');
-  }
-
-  // Ensure path starts with /
-  if (!event.path.startsWith('/')) {
-    event.path = '/' + event.path;
-  }
-
-  console.log('Processed path:', event.path);
-
-  // Handle preflight requests
-  if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-      }
-    };
-  }
-
-  try {
-    // Add custom headers to the event
-    event.headers = {
-      ...event.headers,
-      'x-netlify-function': 'true'
-    };
-
-    const result = await handler(event, context);
-    
-    // Ensure CORS headers are present in the response
-    const headers = {
-      'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
-      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-      'Access-Control-Allow-Credentials': 'true',
-      ...result.headers
-    };
-
-    console.log('Response:', {
-      statusCode: result.statusCode,
-      headers: headers
-    });
-
-    return {
-      ...result,
-      headers: headers
-    };
-  } catch (error) {
-    console.error('Handler error:', error);
-    return {
-      statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': 'https://healthcareclinic-management.netlify.app',
-        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Credentials': 'true',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        error: 'Internal Server Error',
-        message: error.message,
-        path: event.path
-      })
-    };
-  }
-}; 
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+}); 

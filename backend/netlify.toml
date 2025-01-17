@@ -9,6 +9,12 @@
   included_files = ["src/**/*", ".env"]
 
 [[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/.netlify/functions/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
@@ -30,7 +36,7 @@
   NPM_FLAGS = "--legacy-peer-deps"
 
 [[headers]]
-  for = "/.netlify/functions/api/*"
+  for = "/*"
     [headers.values]
     Access-Control-Allow-Origin = "https://healthcareclinic-management.netlify.app"
     Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"

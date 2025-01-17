@@ -7,7 +7,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "prebuild": "rimraf functions",
-    "build": "mkdir functions && xcopy /E /I /Y src functions\\src && copy server.js functions\\api.js"
+    "build": "mkdir functions && xcopy /E /I /Y src functions\\src && copy api.js functions\\"
   },
   "keywords": [],
   "author": "",
