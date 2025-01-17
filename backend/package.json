@@ -2,16 +2,13 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Hospital Management System Backend",
-  "main": "functions/api.ts",
+  "main": "functions/api.js",
   "scripts": {
     "start": "nodemon src/index.js",
     "prebuild": "rimraf functions",
-    "build": "tsc && npm run copy-files",
-    "copy-files": "mkdir functions\\src 2>nul & xcopy /E /I /Y src\\routes functions\\src\\routes & xcopy /E /I /Y src\\controllers functions\\src\\controllers & xcopy /E /I /Y src\\config functions\\src\\config",
+    "build": "mkdir -p functions && cp -r src functions/ && cp api.js functions/",
     "dev": "nodemon src/index.js",
-    "netlify-dev": "netlify dev",
-    "test": "node scripts/test-deployment.js",
-    "seed": "node src/config/seedAdmin.js"
+    "netlify-dev": "netlify dev"
   },
   "keywords": [],
   "author": "",

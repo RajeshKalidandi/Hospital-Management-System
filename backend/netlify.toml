@@ -1,7 +1,7 @@
 [build]
   command = "npm install && npm run build"
   functions = "functions"
-  publish = "public"
+  publish = "."
 
 [functions]
   external_node_modules = ["express", "socket.io", "bcrypt", "jsonwebtoken", "@supabase/supabase-js", "nodemailer"]
@@ -20,17 +20,11 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
 [dev]
   command = "npm run dev"
   port = 8888
   targetPort = 5000
   framework = "#custom"
-  publish = "public"
 
 [build.environment]
   NODE_VERSION = "18"
