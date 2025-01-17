@@ -1,31 +1,25 @@
 [build]
   command = "npm install && npm run build"
+  functions = "functions"
   publish = "public"
 
+[functions]
+  external_node_modules = ["express", "socket.io", "bcrypt", "jsonwebtoken", "@supabase/supabase-js", "nodemailer"]
+  node_bundler = "esbuild"
+  included_files = ["src/**/*", ".env"]
+
 [[redirects]]
-  from = "/api/*"
+  from = "/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
   force = true
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-
-[functions]
-  directory = "functions"
-
-[[headers]]
-  for = "/*"
-    [headers.values]
-    Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization"
-    Access-Control-Allow-Credentials = "true"
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 5000
+  framework = "#custom"
 
 [build.environment]
   NODE_VERSION = "18"
-
-[[plugins]]
-  package = "@netlify/plugin-functions-install-core" 
+  NPM_FLAGS = "--legacy-peer-deps" 
